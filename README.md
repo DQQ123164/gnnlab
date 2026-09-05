@@ -57,7 +57,6 @@ gnnlab/
 |-- tools/
 |   `-- preprocess_datasets.py        # 统一预处理入口
 |-- dsg/                              # 原始skeleton（需在百度网盘下载）
-|   |-- README.md
 |   |-- xsub/                         # Cross-Subject 协议
 |   |   |-- train/*.skeleton
 |   |   `-- test/*.skeleton
@@ -65,7 +64,6 @@ gnnlab/
 |       |-- train/*.skeleton
 |       `-- test/*.skeleton
 |-- ssg/                              # 原始JSON（需在百度网盘下载）
-|   |-- README.md
 |   |-- sitting/{train,test}/*.json   # 坐姿，标签 0
 |   `-- standing/{train,test}/*.json  # 站姿，标签 1
 `-- processed/                        # 统一生成的训练接口

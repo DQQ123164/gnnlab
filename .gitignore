@@ -1,6 +1,6 @@
-# Raw datasets
-dsg/**/*.skeleton
-ssg/**/*.json
+# Raw datasets downloaded separately
+dsg/
+ssg/
 
 # Generated datasets and metadata
 processed/
