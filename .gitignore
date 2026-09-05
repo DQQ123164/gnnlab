@@ -1,0 +1,33 @@
+# Raw datasets
+dsg/**/*.skeleton
+ssg/**/*.json
+
+# Generated datasets and metadata
+processed/
+*.npy
+*.npz
+*.pkl
+
+# Dataset archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# Training artifacts
+checkpoints/
+work_dir/
+*.pt
+*.pth
+
+# Python caches and environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local tooling
+.idea/
+.vscode/
+.DS_Store
