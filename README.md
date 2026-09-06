@@ -43,7 +43,7 @@ SSG 原始训练集包含 240 个 standing JSON，其中 3 个文件没有检测
 - 百度网盘：[点击下载 datasets.tar.gz](https://pan.baidu.com/s/1sc_oOfOLmiM4-UmVUGhyPA?pwd=q4am)
 - 提取码：`q4am`
 
-下载后，在项目根目录执行：
+下载后，将`datasets.tar.gz`放在在项目根目录下，然后执行：
 
 ```bash
 tar -xzf datasets.tar.gz
