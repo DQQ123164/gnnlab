@@ -24,6 +24,8 @@ work_dir/
 # Python caches and environments
 __pycache__/
 *.py[cod]
+.env
+!.env.example
 .venv/
 venv/
 

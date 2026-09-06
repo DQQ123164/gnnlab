@@ -51,6 +51,34 @@ tar -xzf datasets.tar.gz
 
 解压后应得到本项目所需的 `dsg/` 和 `ssg/` 原始数据目录。
 
+## 路径配置
+
+首次使用时复制环境变量模板：
+
+```bash
+mv .env.example .env
+```
+
+然后编辑 `.env`，将前三项改为实际位置：
+
+```dotenv
+GNNLAB_ROOT=/path/to/gnnlab
+ST_GCN_ROOT=/path/to/st-gcn
+GCNLAB_ROOT=/path/to/gcnlab
+```
+
+其余数据路径默认由 `GNNLAB_ROOT` 派生，一般不需要修改：
+
+| 环境变量 | 用途 |
+|---|---|
+| `GNNLAB_ROOT` | 本项目根目录 |
+| `ST_GCN_ROOT` | 下游 ST-GCN 项目根目录 |
+| `GCNLAB_ROOT` | 下游 GCNLab 项目根目录 |
+| `GNNLAB_DSG_DIR` | DSG 原始数据目录 |
+| `GNNLAB_SSG_DIR` | SSG 原始数据目录 |
+| `GNNLAB_PROCESSED_DIR` | 统一预处理输出目录 |
+| `NTU60_ANNOTATION_FILE` | 可选，仅从 NTU60 注释重新导出 DSG 时使用 |
+
 ## 环境要求
 
 - Python 3.10 或更高版本
@@ -61,6 +89,7 @@ tar -xzf datasets.tar.gz
 ```text
 gnnlab/
 |-- README.md                         # 项目总说明
+|-- .env.example                     # 本地路径配置模板
 |-- tools/
 |   |-- export_dsg_source.py          # 从 NTU60 注释恢复正确的 DSG 原始骨架
 |   |-- organize_dsg_source.py        # 实体整理官方 XSub/XView 原始目录
@@ -68,6 +97,7 @@ gnnlab/
 |   `-- preprocessing/
 |       |-- __init__.py               # 预处理包公开接口
 |       |-- common.py                 # 原子写入、清理、校验和进度显示
+|       |-- config.py                 # .env 加载与路径配置
 |       |-- dsg.py                    # DSG skeleton 解析与输出
 |       `-- ssg.py                    # SSG JSON 解析、归一化与输出
 |-- dsg/                              # 原始skeleton（需在百度网盘下载）

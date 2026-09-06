@@ -13,6 +13,7 @@ from typing import Any, Sequence
 import numpy as np
 
 if __package__:
+    from .preprocessing.config import env_path, load_env_file, optional_env_path
     from .preprocessing.common import LOGGER, ProgressBar
     from .preprocessing.dsg import (
         DSG_ACTION_LABELS,
@@ -21,6 +22,7 @@ if __package__:
         validate_official_protocols,
     )
 else:
+    from preprocessing.config import env_path, load_env_file, optional_env_path
     from preprocessing.common import LOGGER, ProgressBar
     from preprocessing.dsg import (
         DSG_ACTION_LABELS,
@@ -42,6 +44,10 @@ JOINT_EXTRA = " 0 0 0 0 0 0 0 0 2\n"
 
 
 def parse_args() -> argparse.Namespace:
+    project_root = Path(__file__).resolve().parents[1]
+    load_env_file(project_root / ".env")
+    dsg_dir = env_path("GNNLAB_DSG_DIR", project_root / "dsg")
+
     parser = argparse.ArgumentParser(
         description="Export the original five DSG actions as NTU .skeleton files.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -49,13 +55,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--annotation",
         type=Path,
-        required=True,
-        help="Path to the NTU60 ntu60_3danno.pkl file.",
+        default=optional_env_path("NTU60_ANNOTATION_FILE"),
+        help=(
+            "Path to the NTU60 ntu60_3danno.pkl file. Can also be set with "
+            "NTU60_ANNOTATION_FILE."
+        ),
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path(__file__).resolve().parents[1] / "dsg" / "nturgb+d_skeletons",
+        default=dsg_dir / "nturgb+d_skeletons",
         help="Directory receiving the 4713 selected .skeleton files.",
     )
     parser.add_argument(
@@ -68,7 +77,10 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable progress reporting.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.annotation is None:
+        parser.error("--annotation or NTU60_ANNOTATION_FILE is required")
+    return args
 
 
 def load_selected_annotations(path: Path) -> list[dict[str, Any]]:

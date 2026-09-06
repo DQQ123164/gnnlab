@@ -13,6 +13,9 @@ if __package__:
         DatasetName,
         LOGGER,
         clean_processed_datasets,
+        env_path,
+        load_env_file,
+        optional_env_path,
         preprocess_dsg,
         preprocess_ssg,
     )
@@ -21,12 +24,19 @@ else:
         DatasetName,
         LOGGER,
         clean_processed_datasets,
+        env_path,
+        load_env_file,
+        optional_env_path,
         preprocess_dsg,
         preprocess_ssg,
     )
 
 
 def parse_args() -> argparse.Namespace:
+    project_root = Path(__file__).resolve().parents[1]
+    load_env_file(project_root / ".env")
+    default_root = env_path("GNNLAB_ROOT", project_root)
+
     parser = argparse.ArgumentParser(
         description="Preprocess dsg and ssg into reusable gnnlab artifacts.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -34,23 +44,32 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--root",
         type=Path,
-        default=Path(__file__).resolve().parents[1],
-        help="Repository root containing dsg/ and ssg/.",
+        default=default_root,
+        help="Repository root. Can also be set with GNNLAB_ROOT.",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=None,
-        help="Processed output directory. Defaults to ROOT/processed.",
+        default=optional_env_path("GNNLAB_PROCESSED_DIR"),
+        help=(
+            "Processed output directory. Defaults to GNNLAB_PROCESSED_DIR or "
+            "ROOT/processed."
+        ),
     )
     parser.add_argument(
         "--dsg-source",
         type=Path,
-        default=None,
+        default=optional_env_path("GNNLAB_DSG_DIR"),
         help=(
-            "Directory containing all DSG .skeleton files. Defaults to ROOT/dsg; "
-            "ROOT/dsg/nturgb+d_skeletons is also detected."
+            "Directory containing DSG data. Defaults to GNNLAB_DSG_DIR or "
+            "ROOT/dsg; ROOT/dsg/nturgb+d_skeletons is also detected."
         ),
+    )
+    parser.add_argument(
+        "--ssg-source",
+        type=Path,
+        default=optional_env_path("GNNLAB_SSG_DIR"),
+        help="Directory containing SSG data. Defaults to GNNLAB_SSG_DIR or ROOT/ssg.",
     )
     parser.add_argument(
         "--datasets",
@@ -120,7 +139,7 @@ def main() -> None:
 
     if "ssg" in selected:
         preprocess_ssg(
-            source_dir=root / "ssg",
+            source_dir=(args.ssg_source or root / "ssg").resolve(),
             output_dir=output_dir / "ssg",
             overwrite=args.overwrite,
             min_confidence=args.ssg_min_confidence,

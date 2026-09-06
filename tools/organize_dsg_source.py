@@ -10,6 +10,7 @@ import shutil
 from pathlib import Path
 
 if __package__:
+    from .preprocessing.config import env_path, load_env_file
     from .preprocessing.common import LOGGER, ProgressBar
     from .preprocessing.dsg import (
         build_official_protocols,
@@ -18,6 +19,7 @@ if __package__:
         validate_official_protocols,
     )
 else:
+    from preprocessing.config import env_path, load_env_file
     from preprocessing.common import LOGGER, ProgressBar
     from preprocessing.dsg import (
         build_official_protocols,
@@ -32,7 +34,9 @@ SPLITS = ("train", "test")
 
 
 def parse_args() -> argparse.Namespace:
-    root = Path(__file__).resolve().parents[1]
+    project_root = Path(__file__).resolve().parents[1]
+    load_env_file(project_root / ".env")
+    dsg_dir = env_path("GNNLAB_DSG_DIR", project_root / "dsg")
     parser = argparse.ArgumentParser(
         description="Organize raw DSG skeletons into official protocol directories.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -40,13 +44,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source-dir",
         type=Path,
-        default=root / "dsg" / "nturgb+d_skeletons",
+        default=dsg_dir / "nturgb+d_skeletons",
         help="Directory containing all 4713 correct DSG .skeleton files.",
     )
     parser.add_argument(
         "--output-root",
         type=Path,
-        default=root / "dsg",
+        default=dsg_dir,
         help="Directory receiving xsub/ and xview/.",
     )
     parser.add_argument(
