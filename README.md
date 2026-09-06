@@ -1,9 +1,9 @@
 # GNNLab 实验数据接口
 
-本实验统一管理两套骨架数据，将它们预处理成可被下游训练项目直接读取的稳定数据接口：
+本实验统一管理两套骨架数据，并将它们预处理成稳定、通用的数据接口：
 
-- `dsg`：面向五分类动态骨架数据。
-- `ssg`：面向二分类（坐姿/站姿）静态骨架数据。
+- `dsg`：五分类动态骨架序列数据。
+- `ssg`：二分类（坐姿/站姿）静态骨架姿态数据。
 
 
 ## 数据集类别与样本数
@@ -59,12 +59,10 @@ tar -xzf datasets.tar.gz
 mv .env.example .env
 ```
 
-然后编辑 `.env`，将前三项改为实际位置：
+然后编辑 `.env`，将项目根目录改为本机实际位置：
 
 ```dotenv
 GNNLAB_ROOT=/path/to/gnnlab
-ST_GCN_ROOT=/path/to/st-gcn
-GCNLAB_ROOT=/path/to/gcnlab
 ```
 
 其余数据路径默认由 `GNNLAB_ROOT` 派生，一般不需要修改：
@@ -72,8 +70,6 @@ GCNLAB_ROOT=/path/to/gcnlab
 | 环境变量 | 用途 |
 |---|---|
 | `GNNLAB_ROOT` | 本项目根目录 |
-| `ST_GCN_ROOT` | 下游 ST-GCN 项目根目录 |
-| `GCNLAB_ROOT` | 下游 GCNLab 项目根目录 |
 | `GNNLAB_DSG_DIR` | DSG 原始数据目录 |
 | `GNNLAB_SSG_DIR` | SSG 原始数据目录 |
 | `GNNLAB_PROCESSED_DIR` | 统一预处理输出目录 |

@@ -1,4 +1,4 @@
-"""Preprocess NTU RGB+D skeleton sequences for ST-GCN."""
+"""Preprocess NTU RGB+D sequences for dynamic skeleton classification."""
 
 from __future__ import annotations
 
@@ -222,9 +222,8 @@ def preprocess_dsg(
             )
 
     metadata = {
-        "consumer": "st-gcn",
+        "task": "dynamic_skeleton_classification",
         "source_format": "NTU RGB+D .skeleton text files",
-        "source_directory": str(raw_dir),
         "source_layout": source_layout,
         "protocols": {
             "xsub": "official NTU RGB+D 60 cross-subject split",

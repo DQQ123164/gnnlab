@@ -1,4 +1,4 @@
-"""Preprocess OpenPose BODY_25 static poses for GCNLab."""
+"""Preprocess OpenPose BODY_25 poses for static skeleton classification."""
 
 from __future__ import annotations
 
@@ -169,7 +169,7 @@ def preprocess_ssg(
         )
 
     metadata = {
-        "consumer": "gcnlab",
+        "task": "static_skeleton_classification",
         "format": {
             "data": "float32 numpy array shaped (N, V, C)",
             "channels": ["x_normalized", "y_normalized", "confidence"],
