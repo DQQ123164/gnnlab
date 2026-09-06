@@ -1,26 +1,27 @@
 # GNNLab 实验数据接口
 
-本实验统一管理两套骨架数据，并将它们预处理成可被下游训练项目直接读取的稳定数据接口：
+本实验统一管理两套骨架数据，将它们预处理成可被下游训练项目直接读取的稳定数据接口：
 
 - `dsg`：面向五分类动态骨架数据。
 - `ssg`：面向二分类（坐姿/站姿）静态骨架数据。
 
-原始数据保存在 `dsg/` 和 `ssg/`，统一预处理结果保存在 `processed/`。下游项目应读取 `processed/`，不直接依赖源数据目录的内部结构。
 
 ## 数据集类别与样本数
 
 ### DSG 五分类动态骨架数据
 
-DSG 来源于 NTU RGB+D 60 骨架数据集，从原始 60 个动作类别中筛选出 `A033`、`A044`、`A045`、`A046` 和 `A047` 共 5 类，并分别提供 `xsub` 和 `xview` 两种数据划分。DSG 不是完整的 NTU RGB+D 60 数据集：
+DSG 来源于 NTU RGB+D 60 骨架数据集，从原始 60 个动作类别中筛选出 `A059`、`A030`、`A016`、`A005` 和 `A027` 共 5 类较容易区分的数据类别。预处理脚本从同一份完整原始数据按 NTU RGB+D 60 官方规则生成 Cross-Subject（`xsub`）和 Cross-View（`xview`）两种协议（DSG 不是完整的 NTU RGB+D 60 数据集）：
 
 | 标签 | 动作类别 | xsub train | xsub test | xview train | xview test |
-|---:|---|---:|---:|---:|---:|
-| 0 | A033 check time | 536 | 134 | 504 | 126 |
-| 1 | A044 headache | 536 | 134 | 504 | 126 |
-| 2 | A045 chest pain | 537 | 134 | 505 | 126 |
-| 3 | A046 back pain | 538 | 134 | 506 | 126 |
-| 4 | A047 neck pain | 538 | 134 | 506 | 126 |
-| **总计** | **5 类** | **2685** | **670** | **2525** | **630** |
+|----|---|---:|---:|---:|---:|
+| 0 | A059 walking towards each other | 666 | 273 | 623 | 316 |
+| 1 | A030 typing on a keyboard | 669 | 275 | 628 | 316 |
+| 2 | A016 wear a shoe | 667 | 273 | 625 | 315 |
+| 3 | A005 drop | 667 | 275 | 626 | 316 |
+| 4 | A027 jump up | 672 | 276 | 632 | 316 |
+| **总计** | **5 类** | **3341** | **1372** | **3134** | **1579** |
+
+协议解释：`xsub` 以官方 20 名训练受试者划分训练集，其余受试者作为测试集；`xview` 以摄像机 2、3 的样本作为训练集，摄像机 1 的样本作为测试集。这里不再对官方训练侧做随机 8:2 二次切分。
 
 ### SSG 二分类静态骨架数据
 
@@ -36,13 +37,19 @@ SSG 原始训练集包含 240 个 standing JSON，其中 3 个文件没有检测
 
 ## 数据下载
 
-原始 DSG 和 SSG 数据统一打包在 `datasets.zip` 中：
+原始 DSG 和 SSG 数据统一打包在 `datasets.tar.gz` 中：
 
-- 文件名：`datasets.zip`
-- 百度网盘：[点击下载 datasets.zip](https://pan.baidu.com/s/1Fb1u1TgfJWR3bqnDQjA31A?pwd=iy5s)
-- 提取码：`iy5s`
+- 文件名：`datasets.tar.gz`
+- 百度网盘：[点击下载 datasets.tar.gz](https://pan.baidu.com/s/1sc_oOfOLmiM4-UmVUGhyPA?pwd=q4am)
+- 提取码：`q4am`
 
-下载并解压后，应将原始数据放在本项目的 `dsg/` 和 `ssg/` 目录中。
+下载后，在项目根目录执行：
+
+```bash
+tar -xzf datasets.tar.gz
+```
+
+解压后应得到本项目所需的 `dsg/` 和 `ssg/` 原始数据目录。
 
 ## 环境要求
 
@@ -55,14 +62,17 @@ SSG 原始训练集包含 240 个 standing JSON，其中 3 个文件没有检测
 gnnlab/
 |-- README.md                         # 项目总说明
 |-- tools/
-|   `-- preprocess_datasets.py        # 统一预处理入口
+|   |-- export_dsg_source.py          # 从 NTU60 注释恢复正确的 DSG 原始骨架
+|   |-- organize_dsg_source.py        # 实体整理官方 XSub/XView 原始目录
+|   |-- preprocess_datasets.py        # 稳定的命令行入口与任务调度
+|   `-- preprocessing/
+|       |-- __init__.py               # 预处理包公开接口
+|       |-- common.py                 # 原子写入、清理、校验和进度显示
+|       |-- dsg.py                    # DSG skeleton 解析与输出
+|       `-- ssg.py                    # SSG JSON 解析、归一化与输出
 |-- dsg/                              # 原始skeleton（需在百度网盘下载）
-|   |-- xsub/                         # Cross-Subject 协议
-|   |   |-- train/*.skeleton
-|   |   `-- test/*.skeleton
-|   `-- xview/                        # Cross-View 协议
-|       |-- train/*.skeleton
-|       `-- test/*.skeleton
+|   |-- xsub/{train,test}/*.skeleton
+|   `-- xview/{train,test}/*.skeleton
 |-- ssg/                              # 原始JSON（需在百度网盘下载）
 |   |-- sitting/{train,test}/*.json   # 坐姿，标签 0
 |   `-- standing/{train,test}/*.json  # 站姿，标签 1
@@ -78,6 +88,7 @@ gnnlab/
         |-- test_data.npy
         `-- test_label.npy
 ```
+
 
 ## 快速开始
 
@@ -95,13 +106,13 @@ python3 tools/preprocess_datasets.py --overwrite
 
 ## 常用命令
 
-只处理 DSG：
+处理 DSG：
 
 ```bash
 python3 tools/preprocess_datasets.py --datasets dsg --overwrite
 ```
 
-只处理 SSG：
+处理 SSG：
 
 ```bash
 python3 tools/preprocess_datasets.py --datasets ssg --overwrite
@@ -119,7 +130,7 @@ python3 tools/preprocess_datasets.py --datasets all --overwrite
 python3 tools/preprocess_datasets.py --clean --datasets all
 ```
 
-只删除某一套生成数据：
+删除某一套生成数据：
 
 ```bash
 python3 tools/preprocess_datasets.py --clean --datasets ssg
