@@ -1,61 +1,50 @@
-# GNNLab 数据预处理
+# DSG 动态骨架数据处理要求
 
-本仓库的预处理脚本将原始骨架数据转换为 `processed/` 下的 NumPy 数据接口。这里仅说明如何准备数据和运行脚本；各数据集的实验要求分别放在独立分支。
+本分支仅记录 DSG 的数据范围、划分和预处理接口；未规定模型或训练方案。
 
-## 环境要求
+## 数据范围与标签
 
-- Python 3.10 或更高版本
-- NumPy
+DSG 来源于 NTU RGB+D 60 骨架数据集，仅使用 `A059`、`A030`、`A016`、`A005` 和 `A027` 五种动作，并非完整的 NTU RGB+D 60 数据集。
 
-## 准备原始数据
+| 标签 | 动作类别 | xsub train | xsub test | xview train | xview test |
+|---:|---|---:|---:|---:|---:|
+| 0 | A059 walking towards each other | 666 | 273 | 623 | 316 |
+| 1 | A030 typing on a keyboard | 669 | 275 | 628 | 316 |
+| 2 | A016 wear a shoe | 667 | 273 | 625 | 315 |
+| 3 | A005 drop | 667 | 275 | 626 | 316 |
+| 4 | A027 jump up | 672 | 276 | 632 | 316 |
+| **总计** | **5 类** | **3341** | **1372** | **3134** | **1579** |
 
-原始数据统一打包在 `datasets.tar.gz` 中：
+## 划分与处理
 
-- 百度网盘：[下载 datasets.tar.gz](https://pan.baidu.com/s/1sc_oOfOLmiM4-UmVUGhyPA?pwd=q4am)
-- 提取码：`q4am`
+- `xsub`（Cross-Subject）：按官方受试者名单划分，20 名指定受试者用于训练，其余用于测试。
+- `xview`（Cross-View）：摄像机 2、3 的样本用于训练，摄像机 1 的样本用于测试。
+- 两种协议从同一份原始数据独立生成；不对官方训练集再次随机按 8:2 切分。
+- 输入为 NTU RGB+D 的 `.skeleton` 文件，可放在 `dsg/` 的单一原始目录，也可使用 `dsg/{xsub,xview}/{train,test}/` 已整理的目录。
 
-将压缩包放在项目根目录并解压：
-
-```bash
-tar -xzf datasets.tar.gz
-```
-
-解压后，项目根目录应包含 `dsg/` 和 `ssg/`。
-
-路径默认相对于项目根目录。如需指定其他位置，可复制 `.env.example` 并修改 `GNNLAB_ROOT` 或对应数据集路径：
-
-```bash
-cp .env.example .env
-```
-
-`.env` 中的可用变量包括 `GNNLAB_ROOT`、`GNNLAB_DSG_DIR`、`GNNLAB_SSG_DIR` 和 `GNNLAB_PROCESSED_DIR`；不配置时使用项目根目录下的同名目录。
-
-## 运行预处理
-
-在项目根目录运行：
+在项目根目录执行：
 
 ```bash
-python3 tools/preprocess_datasets.py
-```
-
-默认处理两套数据。也可以只处理指定数据集：
-
-```bash
-python3 tools/preprocess_datasets.py --datasets ssg
 python3 tools/preprocess_datasets.py --datasets dsg
 ```
 
-生成结果保存在 `processed/ssg/` 和 `processed/dsg/`。如果目标文件已存在，重新生成时需要显式添加 `--overwrite`，例如：
+如果已经生成过结果，需要覆盖时添加 `--overwrite`。
 
-```bash
-python3 tools/preprocess_datasets.py --datasets all --overwrite
+## 输出接口
+
+生成结果位于 `processed/dsg/`，每个协议的 `train` 和 `test` 都包含下列文件：
+
+```text
+processed/dsg/
+|-- metadata.json
+|-- xsub/
+|   |-- train_data.npy
+|   |-- train_label.npy
+|   |-- train_label.pkl
+|   |-- train_samples.txt
+|   |-- train_manifest.jsonl
+|   `-- test_...（同样的文件类型）
+`-- xview/（与 xsub 相同的结构）
 ```
 
-仅清理指定数据集的已生成结果：
-
-```bash
-python3 tools/preprocess_datasets.py --clean --datasets ssg
-python3 tools/preprocess_datasets.py --clean --datasets dsg
-```
-
-使用 `--clean --datasets all` 可清理两套已生成结果；原始数据不受影响。运行 `python3 tools/preprocess_datasets.py --help` 可查看其他路径与处理选项。
+数据数组为 `float32`，形状 `(N, 3, 300, 25, 2)`，依次表示样本、XYZ 坐标、帧、关节和人体。缺少的帧与人体补零，超过上限的帧与人体截断。`*_label.npy` 为与数据行对应的 `int64` 标签；`*_label.pkl` 保存样本名和标签；`metadata.json` 记录协议、类别映射、划分统计和数据格式。
