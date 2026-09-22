@@ -8,7 +8,7 @@
 
 1. [`ssg`](../../tree/ssg)：静态骨架图实验，说明如何用关节点和连接表示人体姿态，以及坐姿与站姿二分类的数据范围和处理要求。
 2. [`dsg`](../../tree/dsg)：动态骨架图实验，说明为什么动作识别需要时间信息，以及五类动态动作的数据范围、划分协议和处理要求。
-3. [`experiment-tbd`](../../tree/experiment-tbd)：为后续实验预留的文档分支，具体用途将在实验确定后补充。
+3. [`ntu60-graph-models`](../../tree/ntu60-graph-models)：自由研究问题，探索 Graph Transformer/GCN 能否在完整的 [NTU RGB+D 60](https://rose1.ntu.edu.sg/dataset/actionRecognition/) 骨架动作识别任务上提高准确率。
 
 切换到对应分支即可查看该实验的独立 README，例如：
 
