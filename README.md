@@ -30,7 +30,7 @@ gnnlab/
 2. [`dsg`](../../tree/dsg)：**动态骨架图实验**，说明为什么动作识别需要时间信息，以及五类动态动作的数据范围、划分协议和处理要求。
 3. [`ntu60-graph-models`](../../tree/ntu60-graph-models)：**自由研究问题**，自由文体不做具体约束，建议探索 Graph Transformer和GCN 能否在完整的 [NTU RGB+D 60](https://rose1.ntu.edu.sg/dataset/actionRecognition/) 骨架动作识别任务上提高准确率。
 
-切换到对应分支即可查看该实验的独立 README，例如：
+切换到对应分支即可查看该实验的独立 README，例如切换到`ssg`分支可以使用如下命令：
 
 ```bash
 git switch ssg
