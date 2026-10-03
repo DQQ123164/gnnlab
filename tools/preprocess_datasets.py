@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Sequence
 
 if __package__:
     from .preprocessing import (
@@ -128,9 +128,10 @@ def main() -> None:
         return
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    metadata_by_dataset: dict[DatasetName, dict[str, Any]] = {}
 
     if "dsg" in selected:
-        preprocess_dsg(
+        metadata_by_dataset["dsg"] = preprocess_dsg(
             source_dir=(args.dsg_source or root / "dsg").resolve(),
             output_dir=output_dir / "dsg",
             overwrite=args.overwrite,
@@ -138,14 +139,45 @@ def main() -> None:
         )
 
     if "ssg" in selected:
-        preprocess_ssg(
+        metadata_by_dataset["ssg"] = preprocess_ssg(
             source_dir=(args.ssg_source or root / "ssg").resolve(),
             output_dir=output_dir / "ssg",
             overwrite=args.overwrite,
             min_confidence=args.ssg_min_confidence,
+            show_progress=not args.no_progress,
         )
 
-    LOGGER.info("Done. Processed artifacts are under %s", output_dir)
+    log_output_summaries(metadata_by_dataset)
+    LOGGER.info("Output directory: %s", output_dir)
+    LOGGER.info("[DONE] Preprocessing completed")
+
+
+def log_output_summaries(
+    metadata_by_dataset: dict[DatasetName, dict[str, Any]],
+) -> None:
+    for dataset in sorted(metadata_by_dataset):
+        for summary in metadata_by_dataset[dataset]["splits"]:
+            protocol = summary.get("protocol")
+            sample_count = summary["sample_count"]
+            data_file = summary["data_file"]
+            if not data_file.endswith("_data.npy"):
+                raise ValueError(f"Unexpected generated data filename: {data_file}")
+            label_file = f"{data_file.removesuffix('_data.npy')}_label.npy"
+            scope = (
+                f"{dataset} {protocol}/{summary['split']}"
+                if protocol
+                else f"{dataset} {summary['split']}"
+            )
+            LOGGER.info(
+                "%s: samples=%d | %s %s %s | %s int64 (%d,)",
+                scope,
+                sample_count,
+                data_file,
+                summary["dtype"],
+                tuple(summary["data_shape"]),
+                label_file,
+                sample_count,
+            )
 
 
 def expand_datasets(values: Sequence[str]) -> set[DatasetName]:

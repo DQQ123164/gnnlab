@@ -274,6 +274,7 @@ def materialize_staging(
                     future.cancel()
                 raise
     finally:
+        progress.close()
         for archive in worker_archives:
             archive.close()
 
@@ -441,10 +442,27 @@ def main() -> None:
         raise SystemExit(f"error: {exc}") from exc
 
     print(json.dumps(manifest, indent=2, sort_keys=True))
+    LOGGER.info(
+        "Samples: valid=%d, excluded=%d, classes=%d",
+        manifest["valid_samples"],
+        manifest["excluded_samples"],
+        len(manifest["class_counts"]),
+    )
+    protocol_splits = manifest["protocol_splits"]
+    for protocol in PROTOCOLS:
+        splits = protocol_splits[protocol]
+        LOGGER.info(
+            "%s: train=%d, test=%d",
+            protocol,
+            splits["train"],
+            splits["test"],
+        )
     if args.dry_run:
-        LOGGER.info("Dry run completed; no files were written")
+        LOGGER.info("Validation only: no files were written")
+        LOGGER.info("[DONE] DSG archive validation completed")
     else:
-        LOGGER.info("Published official DSG splits under %s", args.output_root.resolve())
+        LOGGER.info("Output directory: %s", args.output_root.resolve())
+        LOGGER.info("[DONE] DSG split completed")
 
 
 if __name__ == "__main__":
