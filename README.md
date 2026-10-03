@@ -31,22 +31,58 @@ DSG 来源于 NTU RGB+D 60 骨架数据集，仅使用 `A059`、`A030`、`A016`�
 | 4 | A027 jump up | 672 | 276 | 632 | 316 |
 | **总计** | **5 类** | **3341** | **1372** | **3134** | **1579** |
 
-## 划分与预处理
+## 数据准备与划分
+
+DSG 直接从 NTU RGB+D 官方原始骨架压缩包中筛选五类动作，不使用预先整理好的课程数据包。本实验只需要 `nturgbd_skeletons_s001_to_s017.zip`，该压缩包包含 NTU RGB+D 60 的 `A001-A060`；`nturgbd_skeletons_s018_to_s032.zip` 仅包含 NTU RGB+D 120 新增的 `A061-A120`，不参与本实验。
 
 - `xsub`（Cross-Subject）：按官方受试者名单划分，20 名指定受试者用于训练，其余用于测试。
 - `xview`（Cross-View）：摄像机 2、3 的样本用于训练，摄像机 1 的样本用于测试。
 - 两种协议从同一份原始数据独立生成；如需验证集，应从各协议的训练集中划分，不得改变固定测试集。
-- 输入为 NTU RGB+D 的 `.skeleton` 文件，可统一放在 `dsg/` 或 `dsg/nturgb+d_skeletons/` 中，也可使用预先整理好的 `dsg/{xsub,xview}/{train,test}/` 目录结构。
 
-## 快速开始
+### 1. 校验原始压缩包
 
-准备好原始数据后，在项目根目录执行：
+假设原始压缩包位于 `/home/dqq/NTU-DA/dataset/`，先在项目根目录执行只读校验：
+
+```bash
+python3 tools/split_dsg_from_ntu.py \
+  --source-dir /home/dqq/NTU-DA/dataset \
+  --dry-run
+```
+
+校验通过时应得到 4713 个有效样本，并排除 27 个已知无效样本；`xsub` 包含 3341 个训练样本和 1372 个测试样本，`xview` 包含 3134 个训练样本和 1579 个测试样本。
+
+### 2. 生成官方划分
+
+确认校验结果无误后，生成 DSG 的源数据目录：
+
+```bash
+python3 tools/split_dsg_from_ntu.py \
+  --source-dir /home/dqq/NTU-DA/dataset
+```
+
+如果压缩包位于其他位置，请将 `--source-dir` 修改为实际目录。脚本只读取原始 ZIP，不会修改它，并生成以下结构：
+
+```text
+dsg/
+|-- xsub/
+|   |-- train/
+|   `-- test/
+`-- xview/
+    |-- train/
+    `-- test/
+```
+
+同一样本会分别参与 `xsub` 和 `xview`，脚本默认通过硬链接共享文件内容以节省空间；如需生成独立副本，可添加 `--copy-files`。已有划分需要重新生成时，添加 `--overwrite`。
+
+### 3. 运行预处理
+
+完成划分后，将 `.skeleton` 文件转换为模型可读取的 NumPy 数据：
 
 ```bash
 python3 tools/preprocess_datasets.py --datasets dsg
 ```
 
-已有输出需要重新生成时，添加 `--overwrite`。
+已有 `processed/dsg/` 结果需要重新生成时，为该命令添加 `--overwrite`。
 
 ## 输出接口
 
@@ -73,3 +109,9 @@ processed/dsg/
 - `metadata.json`：记录任务与源数据格式、输入目录组织方式、协议说明、数组格式、类别映射，以及各协议和划分的样本统计、文件路径与处理警告汇总。
 
 预处理生成的 `.npy` 文件和 `metadata.json` **不包含骨架边连接**。帧内图连接应采用 NTU RGB+D 25 关节的官方人体骨架拓扑，并在模型代码中将其构建为邻接矩阵或 `edge_index`；相邻帧之间的时间关系同样需要在模型代码中自行构建。
+
+## 许可证
+
+本仓库自行编写的代码与文档采用 [MIT License](LICENSE)。
+
+NTU RGB+D 数据集及其衍生数据不属于 MIT License 的授权范围。使用者须自行获取数据并遵守 [NTU RGB+D 官方使用条款](https://rose1.ntu.edu.sg/dataset/actionRecognition/)；本仓库不提供或再分发 NTU RGB+D 原始数据及其预处理结果。

@@ -17,6 +17,7 @@ if __package__:
     from .preprocessing.common import LOGGER, ProgressBar
     from .preprocessing.dsg import (
         DSG_ACTION_LABELS,
+        DSG_EXPECTED_ACTION_COUNTS,
         build_official_protocols,
         discover_dsg_samples,
         validate_official_protocols,
@@ -26,19 +27,13 @@ else:
     from preprocessing.common import LOGGER, ProgressBar
     from preprocessing.dsg import (
         DSG_ACTION_LABELS,
+        DSG_EXPECTED_ACTION_COUNTS,
         build_official_protocols,
         discover_dsg_samples,
         validate_official_protocols,
     )
 
 
-EXPECTED_ACTION_COUNTS = {
-    "A059": 939,
-    "A030": 944,
-    "A016": 940,
-    "A005": 942,
-    "A027": 948,
-}
 BODY_INFO = "0 0 0 0 0 0 0 0 0 0\n"
 JOINT_EXTRA = " 0 0 0 0 0 0 0 0 2\n"
 
@@ -99,10 +94,10 @@ def load_selected_annotations(path: Path) -> list[dict[str, Any]]:
         if int(annotation.get("label", -1)) in source_labels
     ]
     counts = Counter(f"A{int(annotation['label']) + 1:03d}" for annotation in selected)
-    if dict(counts) != EXPECTED_ACTION_COUNTS:
+    if dict(counts) != DSG_EXPECTED_ACTION_COUNTS:
         raise ValueError(
             "Unexpected DSG class counts in NTU60 annotation: "
-            f"expected {EXPECTED_ACTION_COUNTS}, got {dict(counts)}"
+            f"expected {DSG_EXPECTED_ACTION_COUNTS}, got {dict(counts)}"
         )
     return selected
 

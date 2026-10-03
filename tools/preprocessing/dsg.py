@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Sequence
@@ -41,6 +42,46 @@ DSG_ACTION_LABELS: dict[str, int] = {
     "A005": 3,
     "A027": 4,
 }
+
+DSG_EXPECTED_ACTION_COUNTS: dict[str, int] = {
+    "A059": 939,
+    "A030": 944,
+    "A016": 940,
+    "A005": 942,
+    "A027": 948,
+}
+
+DSG_EXCLUDED_SAMPLE_NAMES = frozenset(
+    {
+        "S001C003P005R002A005.skeleton",
+        "S002C002P011R002A030.skeleton",
+        "S005C002P010R001A016.skeleton",
+        "S006C002P007R001A005.skeleton",
+        "S007C003P027R002A005.skeleton",
+        "S008C002P001R001A016.skeleton",
+        "S008C002P008R002A059.skeleton",
+        "S008C002P031R001A005.skeleton",
+        "S008C002P035R001A059.skeleton",
+        "S008C002P035R002A005.skeleton",
+        "S008C003P007R001A016.skeleton",
+        "S008C003P025R002A016.skeleton",
+        "S008C003P025R002A030.skeleton",
+        "S008C003P031R002A016.skeleton",
+        "S008C003P035R002A016.skeleton",
+        "S009C003P017R002A030.skeleton",
+        "S010C002P017R001A005.skeleton",
+        "S011C002P008R002A059.skeleton",
+        "S013C001P018R001A016.skeleton",
+        "S013C003P008R002A059.skeleton",
+        "S014C002P025R002A059.skeleton",
+        "S014C003P007R002A059.skeleton",
+        "S015C002P007R001A059.skeleton",
+        "S015C003P025R002A030.skeleton",
+        "S016C003P039R002A016.skeleton",
+        "S017C003P008R001A059.skeleton",
+        "S017C003P020R001A059.skeleton",
+    }
+)
 
 DSG_MAX_FRAMES = 300
 DSG_NUM_JOINTS = 25
@@ -421,6 +462,16 @@ def validate_official_protocols(
                     break
     if protocol_names.get("xsub") != protocol_names.get("xview"):
         errors.append("xsub and xview do not contain the same source sample names")
+    else:
+        xsub_samples = (
+            protocols["xsub"]["train"] + protocols["xsub"]["test"]
+        )
+        action_counts = Counter(sample.action_id for sample in xsub_samples)
+        if dict(action_counts) != DSG_EXPECTED_ACTION_COUNTS:
+            errors.append(
+                "class counts: expected "
+                f"{DSG_EXPECTED_ACTION_COUNTS}, got {dict(action_counts)}"
+            )
     if errors:
         raise ValueError(
             "DSG source does not contain the complete five-class NTU RGB+D 60 "
