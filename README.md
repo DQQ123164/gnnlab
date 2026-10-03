@@ -51,19 +51,8 @@ python3 tools/preprocess_datasets.py --datasets ssg
 
 ## 输出接口
 
-生成文件位于 `processed/ssg/`：
+结果保存在 `processed/ssg/`：
 
-```text
-processed/ssg/
-|-- metadata.json
-|-- train_data.npy
-|-- train_label.npy
-|-- test_data.npy
-`-- test_label.npy
-```
-
-各文件的内容如下：
-
-- `train_data.npy` / `test_data.npy`：训练集与测试集的骨架特征，类型为 `float32`，形状为 `(N, 25, 3)`。其中 `N` 为有效样本数，25 表示`BODY25`的 25 个关节，最后一维依次为归一化后的 `x`、`y` 坐标和关节点置信度。
-- `train_label.npy` / `test_label.npy`：与骨架特征逐行对应的分类标签，类型为 `int64`，形状为 `(N,)`。其中 `0` 表示 `sitting`，`1` 表示 `standing`；例如，`train_data.npy[i]` 对应的标签为 `train_label.npy[i]`。
-- `metadata.json`：数据接口的描述文件，记录类别映射、训练集与测试集统计、归一化规则，以及 `BODY25`的关节名称和连接关系。模型可从 `body25.edges` 读取骨架边；如果所用图学习框架要求双向边或自环，需要按框架的数据接口进行转换。
+- `train_data.npy` / `test_data.npy`：`float32` 骨架特征，形状为 `(N, 25, 3)`，最后一维依次为归一化后的 `x、y` 坐标和置信度。
+- `train_label.npy` / `test_label.npy`：与数据逐样本对应的 `int64` 标签，`0` 表示 `sitting`，`1` 表示 `standing`。
+- `metadata.json`：记录数据统计和 `BODY25` 骨架信息；模型应从 `body25.edges` 读取连接关系并构建图。
