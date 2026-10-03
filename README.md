@@ -70,10 +70,10 @@ GNNLAB_PROCESSED_DIR=${GNNLAB_ROOT}/processed
 
 ### SSG 数据
 
-仓库根目录提供 SSG 原始数据包 `datasets.tar.gz`，解压后即可得到 `ssg/` 原始数据目录：
+仓库根目录提供 SSG 原始数据包 `ssg.tar.gz`，解压后即可得到 `ssg/` 原始数据目录：
 
 ```bash
-tar -xzf datasets.tar.gz
+tar -xzf ssg.tar.gz
 ```
 
 ### DSG 数据
