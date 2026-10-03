@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import pickle
 import shutil
 import sys
@@ -51,7 +52,8 @@ class ProgressBar:
         self.enabled = enabled
         self.started_at = time.monotonic()
         self.last_rendered_at = 0.0
-        self.log_interval = max(1, total // 20)
+        self.last_rendered_completed: int | None = None
+        self.log_interval = max(1, math.ceil(total / 10))
 
     def update(self, completed: int) -> None:
         if not self.enabled:
@@ -61,10 +63,11 @@ class ProgressBar:
         rate = completed / elapsed
         remaining = max(self.total - completed, 0)
         eta = remaining / rate if rate > 0 else 0.0
-        percent = completed / self.total if self.total else 1.0
+        percent = min(completed / self.total, 1.0) if self.total else 1.0
+        complete = completed >= self.total
 
         if sys.stderr.isatty():
-            if completed < self.total and now - self.last_rendered_at < 0.1:
+            if not complete and now - self.last_rendered_at < 0.1:
                 return
             width = 28
             filled = min(width, int(width * percent))
@@ -73,15 +76,17 @@ class ProgressBar:
                 f"\r{self.label:<20} [{bar}] {completed:>{len(str(self.total))}}/"
                 f"{self.total} {percent:6.2%} {rate:6.1f} samples/s "
                 f"ETA {format_duration(eta)}"
+                f"{' DONE' if complete else ''}"
             )
             print(
                 message,
                 file=sys.stderr,
-                end="\n" if completed == self.total else "",
+                end="\n" if complete else "",
                 flush=True,
             )
             self.last_rendered_at = now
-        elif completed == self.total or completed % self.log_interval == 0:
+            self.last_rendered_completed = completed
+        elif complete or completed % self.log_interval == 0:
             LOGGER.info(
                 "%s progress: %d/%d (%.1f%%), %.1f samples/s, ETA %s",
                 self.label,
@@ -91,6 +96,16 @@ class ProgressBar:
                 rate,
                 format_duration(eta),
             )
+
+    def close(self) -> None:
+        if (
+            self.enabled
+            and sys.stderr.isatty()
+            and self.last_rendered_completed is not None
+            and self.last_rendered_completed < self.total
+        ):
+            print(file=sys.stderr, flush=True)
+        self.last_rendered_completed = None
 
 
 def format_duration(seconds: float) -> str:
