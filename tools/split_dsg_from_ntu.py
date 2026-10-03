@@ -10,8 +10,10 @@ import os
 import shutil
 import stat
 import tempfile
+import threading
 import zipfile
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Sequence
@@ -46,12 +48,20 @@ ARCHIVE_NAME = "nturgbd_skeletons_s001_to_s017.zip"
 MANIFEST_NAME = ".dsg-split-manifest.json"
 PROTOCOLS = ("xsub", "xview")
 SPLITS = ("train", "test")
+DEFAULT_WORKERS = max(1, min(8, os.cpu_count() or 1))
 
 
 @dataclass(frozen=True)
 class ArchiveSample:
     info: zipfile.ZipInfo
     sample: DsgSourceSample
+
+
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
 
 
 def parse_args() -> argparse.Namespace:
@@ -92,6 +102,12 @@ def parse_args() -> argparse.Namespace:
         "--dry-run",
         action="store_true",
         help="Validate archive inventory and official splits without writing files.",
+    )
+    parser.add_argument(
+        "--workers",
+        type=positive_int,
+        default=DEFAULT_WORKERS,
+        help="Number of worker threads used to extract selected samples.",
     )
     parser.add_argument(
         "--no-progress",
@@ -180,6 +196,7 @@ def make_manifest(
     excluded_count: int,
     protocols: dict[str, dict[str, list[DsgSourceSample]]],
     copy_files: bool,
+    workers: int,
 ) -> dict[str, object]:
     return {
         "archive": str(archive_path),
@@ -188,6 +205,7 @@ def make_manifest(
         "class_counts": dict(Counter(row.sample.action_id for row in samples)),
         "protocol_splits": protocol_split_counts(protocols),
         "link_mode": "copy" if copy_files else "hardlink",
+        "workers": workers,
     }
 
 
@@ -203,32 +221,61 @@ def destination_map(
 
 
 def materialize_staging(
-    archive: zipfile.ZipFile,
+    archive_path: Path,
     samples: Sequence[ArchiveSample],
     protocols: dict[str, dict[str, list[DsgSourceSample]]],
     staging: Path,
     manifest: dict[str, object],
     copy_files: bool,
     show_progress: bool,
+    workers: int,
 ) -> None:
     locations = destination_map(protocols)
     for protocol in PROTOCOLS:
         for split in SPLITS:
             (staging / protocol / split).mkdir(parents=True, exist_ok=True)
 
-    progress = ProgressBar("split dsg archive", len(samples), show_progress)
-    for index, row in enumerate(samples, start=1):
+    thread_state = threading.local()
+    worker_archives: list[zipfile.ZipFile] = []
+    worker_archives_lock = threading.Lock()
+
+    def worker_archive() -> zipfile.ZipFile:
+        archive = getattr(thread_state, "archive", None)
+        if archive is None:
+            archive = zipfile.ZipFile(archive_path, "r")
+            thread_state.archive = archive
+            with worker_archives_lock:
+                worker_archives.append(archive)
+        return archive
+
+    def extract_sample(row: ArchiveSample) -> None:
         basename = row.sample.path.name
         split_by_protocol = locations[basename]
         first = staging / "xsub" / split_by_protocol["xsub"] / basename
         second = staging / "xview" / split_by_protocol["xview"] / basename
+        archive = worker_archive()
         with archive.open(row.info, "r") as source, first.open("xb") as destination:
             shutil.copyfileobj(source, destination, length=1024 * 1024)
         if copy_files:
             shutil.copyfile(first, second)
         else:
             os.link(first, second)
-        progress.update(index)
+
+    progress = ProgressBar("split dsg archive", len(samples), show_progress)
+    try:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = [executor.submit(extract_sample, row) for row in samples]
+            try:
+                for completed, future in enumerate(as_completed(futures), start=1):
+                    future.result()
+                    progress.update(completed)
+            except BaseException:
+                for future in futures:
+                    future.cancel()
+                raise
+    finally:
+        for archive in worker_archives:
+            archive.close()
 
     manifest_path = staging / MANIFEST_NAME
     with manifest_path.open("x", encoding="utf-8") as file:
@@ -313,7 +360,10 @@ def split_archive(
     copy_files: bool,
     dry_run: bool,
     show_progress: bool,
+    workers: int = DEFAULT_WORKERS,
 ) -> dict[str, object]:
+    if workers < 1:
+        raise ValueError("workers must be a positive integer")
     if not source_dir.is_dir():
         raise FileNotFoundError(f"NTU60 source directory not found: {source_dir}")
     archive_path = source_dir / ARCHIVE_NAME
@@ -341,6 +391,7 @@ def split_archive(
             excluded_count,
             protocols,
             copy_files,
+            workers,
         )
         if dry_run:
             return manifest
@@ -359,13 +410,14 @@ def split_archive(
         )
         try:
             materialize_staging(
-                archive,
+                archive_path,
                 samples,
                 protocols,
                 staging,
                 manifest,
                 copy_files,
                 show_progress,
+                workers,
             )
             publish_staging(staging, output_root, overwrite)
         finally:
@@ -384,6 +436,7 @@ def main() -> None:
             copy_files=args.copy_files,
             dry_run=args.dry_run,
             show_progress=not args.no_progress,
+            workers=args.workers,
         )
     except (OSError, RuntimeError, ValueError, zipfile.BadZipFile) as exc:
         raise SystemExit(f"error: {exc}") from exc

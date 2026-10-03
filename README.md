@@ -8,6 +8,8 @@
 
 ```text
 gnnlab/
+├── dataset/                      # NTU RGB+D 原始骨架压缩包
+│   └── nturgbd_skeletons_s001_to_s017.zip
 ├── dsg/                          # 从 NTU60 原始压缩包生成的 DSG 官方划分
 │   ├── xsub/{train,test}/        # Cross-Subject 训练集与测试集
 │   └── xview/{train,test}/       # Cross-View 训练集与测试集
@@ -81,42 +83,19 @@ tar -xzf datasets.tar.gz ssg/
 
 ### DSG 数据
 
-DSG 不再使用预先筛选的数据包，而是由脚本直接从 NTU RGB+D 官方原始骨架压缩包中筛选五类动作，并生成官方 `xsub` 和 `xview` 划分。
+DSG 使用 NTU RGB+D 60 中的五类动作，因此只需准备 `nturgbd_skeletons_s001_to_s017.zip`；另一个压缩包存放的是 NTU RGB+D 120 新增类别，本实验不会使用。
 
-本实验只需要 `nturgbd_skeletons_s001_to_s017.zip`。该压缩包对应 NTU RGB+D 60 的 A001-A060；`nturgbd_skeletons_s018_to_s032.zip` 包含 NTU RGB+D 120 新增的 A061-A120，本实验不使用。
-
-假设原始压缩包位于 `/home/dqq/NTU-DA/dataset/`，先执行只读校验，确认压缩包文件清单、五类样本数量和官方划分均符合预期：
+将压缩包放入 `gnnlab/dataset/`，然后在项目根目录运行：
 
 ```bash
 python3 tools/split_dsg_from_ntu.py \
-  --source-dir /home/dqq/NTU-DA/dataset \
-  --dry-run
+  --source-dir dataset \
+  --workers 8
 ```
 
-校验通过时应得到 4713 个有效样本（另排除 27 个已知无效样本），其中 `xsub` 为 3341 个训练样本和 1372 个测试样本，`xview` 为 3134 个训练样本和 1579 个测试样本。
+该脚本会并行读取压缩包，从原始数据中筛选五类动作，并按 NTU RGB+D 官方规则生成 `xsub` 和 `xview` 训练集与测试集。`--workers` 表示并行处理的线程数，可根据机器性能调整；生成的数据默认保存到 `dsg/`。
 
-校验通过后，正式生成 DSG 数据划分：
-
-```bash
-python3 tools/split_dsg_from_ntu.py \
-  --source-dir /home/dqq/NTU-DA/dataset
-```
-
-如果原始数据位于其他位置，请将上述路径替换为实际目录，例如 `/path/to/NTU-DA/dataset`。脚本默认写入 `GNNLAB_DSG_DIR`，并生成以下目录：
-
-```text
-dsg/
-├── xsub/
-│   ├── train/
-│   └── test/
-└── xview/
-    ├── train/
-    └── test/
-```
-
-同一样本出现在两种协议中时，脚本默认使用硬链接以节省空间；如需生成相互独立的文件副本，可添加 `--copy-files`。如果输出目录中已有划分，需添加 `--overwrite` 才会重新生成。
-
-划分完成后，将 DSG 骨架文件转换为模型可读取的 NumPy 数据：
+数据划分完成后，运行预处理脚本，将骨架文件转换为模型可读取的 NumPy 数据：
 
 ```bash
 python3 tools/preprocess_datasets.py --datasets dsg
