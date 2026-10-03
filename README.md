@@ -70,15 +70,10 @@ GNNLAB_PROCESSED_DIR=${GNNLAB_ROOT}/processed
 
 ### SSG 数据
 
-SSG 原始数据继续通过课程数据包 `datasets.tar.gz` 提供：
-
-- 百度网盘：[下载 datasets.tar.gz](https://pan.baidu.com/s/1sc_oOfOLmiM4-UmVUGhyPA?pwd=q4am)
-- 提取码：`q4am`
-
-课程数据包中仍包含旧版 `dsg/` 目录，当前 DSG 流程不再使用该目录。为避免旧划分与后续生成的新划分冲突，请将压缩包放在项目根目录，并只提取其中的 `ssg/`：
+仓库根目录提供 SSG 原始数据包 `datasets.tar.gz`，解压后即可得到 `ssg/` 原始数据目录：
 
 ```bash
-tar -xzf datasets.tar.gz ssg/
+tar -xzf datasets.tar.gz
 ```
 
 ### DSG 数据
