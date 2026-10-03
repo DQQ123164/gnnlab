@@ -39,11 +39,11 @@ DSG 直接从 NTU RGB+D 官方原始骨架压缩包中生成。本实验使用 N
 
 ### 1. 生成数据划分
 
-将压缩包放入 `gnnlab/dataset/`，然后在项目根目录运行：
+将压缩包放入 `gnnlab/dataset/`，然后在项目根目录指定该 ZIP 文件运行：
 
 ```bash
 python3 tools/split_dsg_from_ntu.py \
-  --source-dir dataset \
+  --source-zip dataset/nturgbd_skeletons_s001_to_s017.zip \
   --workers 8
 ```
 
