@@ -20,7 +20,7 @@
 
 ## 数据范围与标签
 
-DSG 来源于 NTU RGB+D 60 骨架数据集，仅使用 `A059`、`A030`、`A016`、`A005` 和 `A027` 五种动作，并非完整的 NTU RGB+D 60 数据集。
+DSG 来源于 [NTU RGB+D 60 官方数据集](https://rose1.ntu.edu.sg/dataset/actionRecognition/)，仅使用 `A059`、`A030`、`A016`、`A005` 和 `A027` 五种动作，并非完整的 NTU RGB+D 60 数据集。
 
 | 标签 | 动作类别 | xsub train | xsub test | xview train | xview test |
 |---:|---|---:|---:|---:|---:|
