@@ -78,7 +78,7 @@ tar -xzf ssg.tar.gz
 
 ### DSG 数据
 
-DSG 使用 NTU RGB+D 60 中的五类动作，因此只需准备 `nturgbd_skeletons_s001_to_s017.zip`；另一个压缩包存放的是 NTU RGB+D 120 新增类别，本实验不会使用。
+DSG 数据来源于 [NTU RGB+D 60 官方数据集](https://rose1.ntu.edu.sg/dataset/actionRecognition/)。本实验只使用其中的五类动作，因此只需准备 `nturgbd_skeletons_s001_to_s017.zip`；另一个压缩包存放的是 NTU RGB+D 120 新增类别，本实验不会使用。
 
 将压缩包放入 `gnnlab/dataset/`，然后在项目根目录指定该 ZIP 文件运行：
 
