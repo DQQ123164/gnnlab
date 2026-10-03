@@ -63,6 +63,19 @@ python3 tools/preprocess_datasets.py --datasets dsg
 
 结果保存在 `processed/dsg/`，其中 `xsub/` 和 `xview/` 分别提供训练集与测试集：
 
+```text
+processed/dsg/
+|-- metadata.json
+|-- xsub/
+|   |-- train_data.npy
+|   |-- train_label.npy
+|   |-- train_label.pkl
+|   |-- train_samples.txt
+|   |-- train_manifest.jsonl
+|   `-- test_...（文件类型相同）
+`-- xview/（与 xsub 结构相同）
+```
+
 - `*_data.npy`：`float32` 骨架序列，形状为 `(N, 3, 300, 25, 2)`，通道顺序为 `x、y、z`。
 - `*_label.npy`：与数据逐样本对应的 `int64` 标签，取值为 `0-4`，映射见上方类别表。
 - 其余文件用于记录样本名称、处理信息和数据统计，通常无需作为模型输入。
