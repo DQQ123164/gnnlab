@@ -53,6 +53,15 @@ python3 tools/preprocess_datasets.py --datasets ssg
 
 结果保存在 `processed/ssg/`：
 
+```text
+processed/ssg/
+|-- metadata.json
+|-- train_data.npy
+|-- train_label.npy
+|-- test_data.npy
+`-- test_label.npy
+```
+
 - `train_data.npy` / `test_data.npy`：`float32` 骨架特征，形状为 `(N, 25, 3)`，最后一维依次为归一化后的 `x、y` 坐标和置信度。
 - `train_label.npy` / `test_label.npy`：与数据逐样本对应的 `int64` 标签，`0` 表示 `sitting`，`1` 表示 `standing`。
 - `metadata.json`：记录数据统计和 `BODY25` 骨架信息；模型应从 `body25.edges` 读取连接关系并构建图。
