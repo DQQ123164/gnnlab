@@ -33,48 +33,23 @@ DSG 来源于 NTU RGB+D 60 骨架数据集，仅使用 `A059`、`A030`、`A016`�
 
 ## 数据准备与划分
 
-DSG 直接从 NTU RGB+D 官方原始骨架压缩包中筛选五类动作，不使用预先整理好的课程数据包。本实验只需要 `nturgbd_skeletons_s001_to_s017.zip`，该压缩包包含 NTU RGB+D 60 的 `A001-A060`；`nturgbd_skeletons_s018_to_s032.zip` 仅包含 NTU RGB+D 120 新增的 `A061-A120`，不参与本实验。
+DSG 直接从 NTU RGB+D 官方原始骨架压缩包中生成。本实验使用 NTU RGB+D 60 中的五类动作，因此只需准备 `nturgbd_skeletons_s001_to_s017.zip`；另一个压缩包存放的是 NTU RGB+D 120 新增类别，本实验不会使用。
 
-- `xsub`（Cross-Subject）：按官方受试者名单划分，20 名指定受试者用于训练，其余用于测试。
-- `xview`（Cross-View）：摄像机 2、3 的样本用于训练，摄像机 1 的样本用于测试。
-- 两种协议从同一份原始数据独立生成；如需验证集，应从各协议的训练集中划分，不得改变固定测试集。
+脚本会生成两套官方评估划分：`xsub` 按受试者划分，`xview` 按摄像机视角划分。
 
-### 1. 校验原始压缩包
+### 1. 生成数据划分
 
-假设原始压缩包位于 `/home/dqq/NTU-DA/dataset/`，先在项目根目录执行只读校验：
+将压缩包放入 `gnnlab/dataset/`，然后在项目根目录运行：
 
 ```bash
 python3 tools/split_dsg_from_ntu.py \
-  --source-dir /home/dqq/NTU-DA/dataset \
-  --dry-run
+  --source-dir dataset \
+  --workers 8
 ```
 
-校验通过时应得到 4713 个有效样本，并排除 27 个已知无效样本；`xsub` 包含 3341 个训练样本和 1372 个测试样本，`xview` 包含 3134 个训练样本和 1579 个测试样本。
+该命令会并行筛选五类动作并生成两套数据划分，结果默认保存到 `dsg/`；`--workers` 可根据机器性能调整。
 
-### 2. 生成官方划分
-
-确认校验结果无误后，生成 DSG 的源数据目录：
-
-```bash
-python3 tools/split_dsg_from_ntu.py \
-  --source-dir /home/dqq/NTU-DA/dataset
-```
-
-如果压缩包位于其他位置，请将 `--source-dir` 修改为实际目录。脚本只读取原始 ZIP，不会修改它，并生成以下结构：
-
-```text
-dsg/
-|-- xsub/
-|   |-- train/
-|   `-- test/
-`-- xview/
-    |-- train/
-    `-- test/
-```
-
-同一样本会分别参与 `xsub` 和 `xview`，脚本默认通过硬链接共享文件内容以节省空间；如需生成独立副本，可添加 `--copy-files`。已有划分需要重新生成时，添加 `--overwrite`。
-
-### 3. 运行预处理
+### 2. 运行预处理
 
 完成划分后，将 `.skeleton` 文件转换为模型可读取的 NumPy 数据：
 
