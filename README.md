@@ -61,29 +61,13 @@ python3 tools/preprocess_datasets.py --datasets dsg
 
 ## 输出接口
 
-生成结果位于 `processed/dsg/`，每个协议的 `train` 和 `test` 都包含下列文件：
+结果保存在 `processed/dsg/`，其中 `xsub/` 和 `xview/` 分别提供训练集与测试集：
 
-```text
-processed/dsg/
-|-- metadata.json
-|-- xsub/
-|   |-- train_data.npy
-|   |-- train_label.npy
-|   |-- train_label.pkl
-|   |-- train_samples.txt
-|   |-- train_manifest.jsonl
-|   `-- test_...（同样的文件类型）
-`-- xview/（与 xsub 相同的结构）
-```
+- `*_data.npy`：`float32` 骨架序列，形状为 `(N, 3, 300, 25, 2)`，通道顺序为 `x、y、z`。
+- `*_label.npy`：与数据逐样本对应的 `int64` 标签，取值为 `0-4`，映射见上方类别表。
+- 其余文件用于记录样本名称、处理信息和数据统计，通常无需作为模型输入。
 
-- `*_data.npy`：`float32` 骨架序列，形状为 `(N, C, T, V, M) = (N, 3, 300, 25, 2)`。其中 `N` 为样本数，`C` 为按 `x`、`y`、`z` 排列的三维坐标通道，`T` 为帧，`V` 为关节，`M` 为人体。坐标保留原始值，不进行归一化；不足 300 帧或 2 人的位置补零，超出上限的帧和人体截断。
-- `*_label.npy`：与 `*_data.npy` 各行一一对应的 `int64` 标签，取值为 `0` 至 `4`，具体映射见上方类别表。
-- `*_label.pkl`：二元组 `(sample_names, labels)`，分别保存样本文件名列表及其标签列表。
-- `*_samples.txt`：按数据行顺序逐行记录样本文件名。
-- `*_manifest.jsonl`：逐样本记录 `sample_name`、协议与划分、动作编号、标签、源文件路径、原始与实际保存帧数、最大人体数、空帧数、被丢弃的人体实例数和处理警告。
-- `metadata.json`：记录任务与源数据格式、输入目录组织方式、协议说明、数组格式、类别映射，以及各协议和划分的样本统计、文件路径与处理警告汇总。
-
-预处理生成的 `.npy` 文件和 `metadata.json` **不包含骨架边连接**。帧内图连接应采用 NTU RGB+D 25 关节的官方人体骨架拓扑，并在模型代码中将其构建为邻接矩阵或 `edge_index`；相邻帧之间的时间关系同样需要在模型代码中自行构建。
+数据文件**不包含骨架边连接**。模型需要根据 NTU RGB+D 25 关节拓扑构建帧内邻接关系，并自行建立相邻帧之间的时间关系。
 
 ## 许可证
 
