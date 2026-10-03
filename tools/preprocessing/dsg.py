@@ -555,6 +555,8 @@ def write_dsg_array(
         if tmp_path.exists() or tmp_path.is_symlink():
             tmp_path.unlink()
         raise
+    finally:
+        progress.close()
     return records
 
 

@@ -11,6 +11,7 @@ import numpy as np
 
 from .common import (
     LOGGER,
+    ProgressBar,
     SplitName,
     atomic_save_npy,
     count_labels,
@@ -127,6 +128,7 @@ def preprocess_ssg(
     output_dir: Path,
     overwrite: bool,
     min_confidence: float,
+    show_progress: bool = True,
 ) -> dict[str, Any]:
     require_dir(source_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -138,6 +140,7 @@ def preprocess_ssg(
             source_dir,
             split_name,
             min_confidence,
+            show_progress,
         )
         if not samples:
             raise FileNotFoundError(
@@ -227,16 +230,27 @@ def collect_ssg_samples(
     source_dir: Path,
     split: SplitName,
     min_confidence: float,
+    show_progress: bool = True,
 ) -> tuple[
     list[tuple[np.ndarray, np.ndarray, SsgSampleRecord]],
     list[SsgSampleRecord],
 ]:
     samples: list[tuple[np.ndarray, np.ndarray, SsgSampleRecord]] = []
     skipped_records: list[SsgSampleRecord] = []
+    candidates: list[tuple[str, int, Path]] = []
     for class_name, label in sorted(SSG_CLASS_MAP.items(), key=lambda item: item[1]):
         split_dir = source_dir / class_name / split
         require_dir(split_dir)
-        for json_path in sorted(split_dir.glob("*.json")):
+        candidates.extend(
+            (class_name, label, json_path)
+            for json_path in sorted(split_dir.glob("*.json"))
+        )
+
+    progress = ProgressBar(f"ssg {split}", len(candidates), show_progress)
+    try:
+        for completed, (class_name, label, json_path) in enumerate(
+            candidates, start=1
+        ):
             raw, normalized, record = parse_ssg_json(
                 json_path=json_path,
                 source_dir=source_dir,
@@ -247,8 +261,11 @@ def collect_ssg_samples(
             )
             if record.valid_joint_count == 0:
                 skipped_records.append(record)
-                continue
-            samples.append((raw, normalized, record))
+            else:
+                samples.append((raw, normalized, record))
+            progress.update(completed)
+    finally:
+        progress.close()
     return samples, skipped_records
 
 
