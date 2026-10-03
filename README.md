@@ -85,11 +85,11 @@ tar -xzf datasets.tar.gz ssg/
 
 DSG 使用 NTU RGB+D 60 中的五类动作，因此只需准备 `nturgbd_skeletons_s001_to_s017.zip`；另一个压缩包存放的是 NTU RGB+D 120 新增类别，本实验不会使用。
 
-将压缩包放入 `gnnlab/dataset/`，然后在项目根目录运行：
+将压缩包放入 `gnnlab/dataset/`，然后在项目根目录指定该 ZIP 文件运行：
 
 ```bash
 python3 tools/split_dsg_from_ntu.py \
-  --source-dir dataset \
+  --source-zip dataset/nturgbd_skeletons_s001_to_s017.zip \
   --workers 8
 ```
 

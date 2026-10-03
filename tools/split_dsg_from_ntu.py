@@ -77,10 +77,10 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--source-dir",
+        "--source-zip",
         type=Path,
         required=True,
-        help=f"Directory containing {ARCHIVE_NAME}.",
+        help=f"Path to the {ARCHIVE_NAME} archive.",
     )
     parser.add_argument(
         "--output-root",
@@ -354,7 +354,7 @@ def publish_staging(staging: Path, output_root: Path, overwrite: bool) -> None:
 
 
 def split_archive(
-    source_dir: Path,
+    source_zip: Path,
     output_root: Path,
     overwrite: bool,
     copy_files: bool,
@@ -364,29 +364,28 @@ def split_archive(
 ) -> dict[str, object]:
     if workers < 1:
         raise ValueError("workers must be a positive integer")
-    if not source_dir.is_dir():
-        raise FileNotFoundError(f"NTU60 source directory not found: {source_dir}")
-    archive_path = source_dir / ARCHIVE_NAME
-    if not archive_path.is_file():
-        raise FileNotFoundError(f"Required NTU60 archive not found: {archive_path}")
+    source_zip = source_zip.expanduser()
+    if not source_zip.is_file():
+        raise FileNotFoundError(f"NTU60 source ZIP file not found: {source_zip}")
+    source_zip = source_zip.resolve()
 
     output_root = output_root.expanduser().absolute()
     if output_root.is_symlink():
         raise ValueError(f"--output-root must not be a symbolic link: {output_root}")
     output_root = output_root.resolve()
-    source_dir = source_dir.expanduser().resolve()
-    archive_path = archive_path.resolve()
-    if output_root == source_dir or output_root in archive_path.parents:
-        raise ValueError("--output-root must not contain or equal the NTU60 source directory")
+    if output_root == source_zip or output_root in source_zip.parents:
+        raise ValueError(
+            "--output-root must not be --source-zip or one of its parent directories"
+        )
     if output_root == Path(output_root.anchor):
         raise ValueError("Refusing to use a filesystem root as --output-root")
-    with zipfile.ZipFile(archive_path, "r") as archive:
+    with zipfile.ZipFile(source_zip, "r") as archive:
         samples, excluded_count = scan_archive(archive)
         source_samples = [row.sample for row in samples]
         protocols = build_official_protocols(source_samples)
         validate_official_protocols(protocols)
         manifest = make_manifest(
-            archive_path,
+            source_zip,
             samples,
             excluded_count,
             protocols,
@@ -410,7 +409,7 @@ def split_archive(
         )
         try:
             materialize_staging(
-                archive_path,
+                source_zip,
                 samples,
                 protocols,
                 staging,
@@ -430,7 +429,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     try:
         manifest = split_archive(
-            source_dir=args.source_dir,
+            source_zip=args.source_zip,
             output_root=args.output_root,
             overwrite=args.overwrite,
             copy_files=args.copy_files,
